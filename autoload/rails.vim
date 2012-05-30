@@ -3688,29 +3688,32 @@ function! s:BufSyntax()
       syn cluster htmlArgCluster add=@rubyStringSpecial
       syn cluster htmlPreProc    add=@rubyStringSpecial
 
-    elseif &syntax =~# '^eruby\>' || &syntax == 'haml'
+    elseif &syntax =~# '^eruby' || &syntax == 'haml'
       syn case match
       if classes != ''
-        exe 'syn keyword '.&syntax.'RailsUserClass '.classes.' contained containedin=@'.&syntax.'RailsRegions'
+        exe 'syn keyword '.s:gsub(&syntax,'\.','').'RailsUserClass '.classes.' contained containedin=@'.&syntax.'RailsRegions'
       endif
       if &syntax == 'haml'
+        let tmp_syn = 'haml'
         exe 'syn cluster hamlRailsRegions contains=hamlRubyCodeIncluded,hamlRubyCode,hamlRubyHash,@hamlEmbeddedRuby,rubyInterpolation'
       else
+        let tmp_syn = 'eruby'
         exe 'syn cluster erubyRailsRegions contains=erubyOneLiner,erubyBlock,erubyExpression,rubyInterpolation'
       endif
-      exe 'syn keyword '.&syntax.'RailsHelperMethod '.s:gsub(s:helpermethods(),'<%(content_for|select)\s+','').' contained containedin=@'.&syntax.'RailsRegions'
-      exe 'syn match '.&syntax.'RailsHelperMethod "\<select\>\%(\s*{\|\s*do\>\|\s*(\=\s*&\)\@!" contained containedin=@'.&syntax.'RailsRegions'
-      exe 'syn match '.&syntax.'RailsHelperMethod "\<\%(content_for?\=\|current_page?\)" contained containedin=@'.&syntax.'RailsRegions'
-      exe 'syn keyword '.&syntax.'RailsMethod debugger polymorphic_path polymorphic_url contained containedin=@'.&syntax.'RailsRegions'
-      exe 'syn match '.&syntax.'RailsViewMethod "\.\@<!\<\(h\|html_escape\|u\|url_encode\)\>" contained containedin=@'.&syntax.'RailsRegions'
+      exe 'syn keyword '.tmp_syn.'RailsHelperMethod '.s:gsub(s:helpermethods(),'<%(content_for|select)\s+','').' contained containedin=@'.tmp_syn.'RailsRegions'
+      exe 'syn match '.tmp_syn.'RailsHelperMethod "\<select\>\%(\s*{\|\s*do\>\|\s*(\=\s*&\)\@!" contained containedin=@'.tmp_syn.'RailsRegions'
+      exe 'syn match '.tmp_syn.'RailsHelperMethod "\<\%(content_for?\=\|current_page?\)" contained containedin=@'.tmp_syn.'RailsRegions'
+      exe 'syn keyword '.tmp_syn.'RailsMethod debugger polymorphic_path polymorphic_url contained containedin=@'.tmp_syn.'RailsRegions'
+      exe 'syn match '.tmp_syn.'RailsViewMethod "\.\@<!\<\(h\|html_escape\|u\|url_encode\)\>" contained containedin=@'.tmp_syn.'RailsRegions'
       if buffer.type_name('view-partial')
-        exe 'syn keyword '.&syntax.'RailsMethod local_assigns contained containedin=@'.&syntax.'RailsRegions'
+        exe 'syn keyword '.tmp_syn.'RailsMethod local_assigns contained containedin=@'.tmp_syn.'RailsRegions'
       endif
-      exe 'syn keyword '.&syntax.'RailsRenderMethod render contained containedin=@'.&syntax.'RailsRegions'
+      exe 'syn keyword '.tmp_syn.'RailsRenderMethod render contained containedin=@'.tmp_syn.'RailsRegions'
       exe 'syn case match'
       set isk+=$
       exe 'syn keyword javascriptRailsFunction contained '.s:javascript_functions
       exe 'syn cluster htmlJavaScript add=javascriptRailsFunction'
+      syn region  javaScript start="\v\<\%\=\s*javascript_tag\s+do\s*\%\>" keepend end="\v\<\%-?\s*end\s*-?\%\>"me=s-1 contains=@htmlJavaScript,htmlCssStyleComment,htmlScriptTag,@htmlPreproc
     elseif &syntax == "yaml"
       syn case match
       " Modeled after syntax/eruby.vim
@@ -4480,7 +4483,7 @@ function! s:BufSettings()
     endif
   elseif ft =~# 'yaml\>' || fnamemodify(self.name(),':e') ==# 'yml'
     call self.setvar('&define',self.define_pattern())
-  elseif ft =~# '^eruby\>'
+  elseif ft =~# '^eruby'
     if exists("g:loaded_allml")
       call self.setvar('allml_stylesheet_link_tag', "<%= stylesheet_link_tag '\r' %>")
       call self.setvar('allml_javascript_include_tag', "<%= javascript_include_tag '\r' %>")
@@ -4503,7 +4506,7 @@ function! s:BufSettings()
       call self.setvar('ragtag_doctype_index', 10)
     endif
   endif
-  if ft =~# '^eruby\>' || ft =~# '^yaml\>'
+  if ft =~# '^eruby' || ft ==# 'yaml'
     " surround.vim
     if exists("g:loaded_surround")
       " The idea behind the || part here is that one can normally define the
@@ -4547,7 +4550,7 @@ augroup railsPluginAuto
   autocmd BufWritePost */tasks/**.rake            call rails#cache_clear("rake_tasks")
   autocmd BufWritePost */generators/**            call rails#cache_clear("generators")
   autocmd FileType * if exists("b:rails_root") | call s:BufSettings() | endif
-  autocmd Syntax ruby,eruby,yaml,haml,javascript,coffee,railslog,sass,scss if exists("b:rails_root") | call s:BufSyntax() | endif
+  autocmd Syntax ruby,eruby,eruby.html,yaml,haml,javascript,coffee,railslog,sass,scss if exists("b:rails_root") | call s:BufSyntax() | endif
 augroup END
 
 " }}}1
